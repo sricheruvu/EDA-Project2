@@ -1,0 +1,265 @@
+## Read in the data and classification code
+fileurl <- "https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2FNEI_data.zip"
+if(!file.exists("summarySCC_PM25.rds") || !file.exists("Source_Classification_Code.rds"))
+{
+download.file(fileurl, "DataFiles.zip")
+unzip("DataFiles.zip")
+}
+
+## Read the data into data frames
+
+pm25 <- readRDS("summarySCC_PM25.rds")
+scc <- readRDS("Source_Classification_Code.rds")
+
+## set up factor variables for ease with plotting
+
+pm25$year <- as.factor(pm25$year)
+pm25$type <- as.factor(pm25$type)
+pm25$fips <- as.factor(pm25$fips)
+pm25$Pollutant <- as.factor(pm25$Pollutant)
+pm25$SCC <- as.numeric(pm25$SCC)
+
+## Total SCC for all years, line and dots
+
+year <- levels(pm25$year) # set the year variable as a level-er
+total.scc <- tapply(pm25$SCC, pm25$year, sum, na.rm = TRUE) # sum all the SCC for each year
+
+## Set y limits
+
+ylim_bottom = min(total.scc - sd(total.scc))
+ylim_top = max(total.scc + sd(total.scc))
+
+## Draw the plot
+
+plot(year, total.scc, type = "b", lwd = 2, col = "green", ylab = "Total SCC",
+xlab = "Year", xaxt = "n", ylim = c(ylim_bottom, ylim_top))
+axis(1, at = c(1999, 2002, 2005, 2008))
+title(main = "Total SCC Emissions in the US, 1999 - 2008")
+
+#-------------------------------------------------------------------------------
+
+## Read in the data and classification code
+fileurl <- "https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2FNEI_data.zip"
+if(!file.exists("summarySCC_PM25.rds") || !file.exists("Source_Classification_Code.rds"))
+{
+download.file(fileurl, "DataFiles.zip")
+unzip("DataFiles.zip")
+}
+
+## Read the data into data frames
+
+pm25 <- readRDS("summarySCC_PM25.rds")
+scc <- readRDS("Source_Classification_Code.rds")
+
+## set up factor variables for ease with plotting
+
+pm25$year <- as.factor(pm25$year)
+pm25$type <- as.factor(pm25$type)
+pm25$fips <- as.factor(pm25$fips)
+pm25$Pollutant <- as.factor(pm25$Pollutant)
+
+## Plot 2: Have total emissions from PM2.5 decreased in the Baltimore City, Maryland 
+## (fips == 24510|fips==24510) from 1999 to 2008? 
+## Use the base plotting system to make a plot answering this question.
+
+## Select only for Baltimore City and get numbers to display
+
+pm25.Baltimore <- pm25[which(pm25$fips == 24510),]
+year <- levels(pm25.Baltimore$year) # set the year variable as a level-er
+total.pm25.Baltimore <- tapply(pm25.Baltimore$Emissions, 
+pm25.Baltimore$year, sum)
+## Set y limits
+
+ylim_bottom = mean(total.pm25.Baltimore - 2*sd(total.pm25.Baltimore))
+ylim_top = mean(total.pm25.Baltimore + 2*sd(total.pm25.Baltimore))
+
+## Plot the data
+
+plot(year, total.pm25.Baltimore, type = "b", lwd = 2, col = "blue", 
+ylab = "Total Emissions - Baltimore City",
+xlab = "Year", xaxt = "n",
+ylim = c(ylim_bottom, ylim_top))
+axis(1, at = c(1999, 2002, 2005, 2008))
+title(main = "Total PM25 Emissions for Baltimore City, 1999 - 2008")
+
+#--------------------------------------------------------------------------------------------
+
+## Read in the data and classification code
+fileurl <- "https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2FNEI_data.zip"
+if(!file.exists("summarySCC_PM25.rds") || !file.exists("Source_Classification_Code.rds"))
+{
+download.file(fileurl, "DataFiles.zip")
+unzip("DataFiles.zip")
+}
+
+#Prep data for plots
+
+pm25 <- readRDS("summarySCC_PM25.rds")
+scc <- readRDS("Source_Classification_Code.rds")
+
+library(ggplot2)
+
+## Select only for Baltimore City and get numbers to display
+
+pm25.Baltimore <- pm25[which(pm25$fips == 24510),]
+year <- levels(pm25.Baltimore$year) # set the year variable as a level-er
+type <- levels(pm25.Baltimore$type) # set the type as another level-er
+
+
+## rename df for ease of coding
+
+dftot <- pm25 %>% 
+subset(fips == "24510") %>%
+group_by(year, type) %>%
+summarize(totEmissions = sum(Emissions, na.rm = TRUE))
+
+myplot <- ggplot(data = dftot, aes(year, totEmissions))
+
+myplot <- myplot + 
+geom_point(color = "black", 
+size = 5, 
+alpha = 1/2) + 
+facet_grid(. ~ type) +
+xlab("Year") +
+ylab("Total PM25 Emissions") +
+ggtitle("Total Annual Emissions in Baltimore by Type")
+
+#-------------------------------------------------------------------------
+
+## Read in the data and classification code
+fileurl <- "https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2FNEI_data.zip"
+if(!file.exists("summarySCC_PM25.rds") || !file.exists("Source_Classification_Code.rds"))
+{
+download.file(fileurl, "DataFiles.zip")
+unzip("DataFiles.zip")
+}
+
+## Read the data into data frames
+
+pm25 <- readRDS("summarySCC_PM25.rds")
+scc <- readRDS("Source_Classification_Code.rds")
+
+## set up factor variables for ease with plotting
+
+pm25$year <- as.factor(pm25$year)
+pm25$type <- as.factor(pm25$type)
+pm25$fips <- as.factor(pm25$fips)
+pm25$Pollutant <- as.factor(pm25$Pollutant)
+
+scc.coal <- scc[grep("[Cc]oal",scc$EI.Sector),]
+
+pm25.coal <- subset(pm25, 
+pm25$SCC %in% scc.coal$SCC)
+
+## Now merge
+
+pm25scc <- merge(x = pm25.coal, 
+y = scc,
+by.x = "SCC",
+by.y = "SCC")
+
+library(dplyr)
+
+pm25.coal.tot <- pm25scc %>% group_by(year) %>%
+summarize(totalcombined = sum(Emissions, na.rm = TRUE))
+
+## Draw the plot, then build on the original plot in layers
+
+myplot <- ggplot(data = pm25.coal.tot, aes(x = year, y = totalcombined, group = 1))
+
+myplot <- myplot + geom_line(linetype = "dashed", arrow = arrow(), color = "blue") + 
+geom_point()
+myplot <- myplot + xlab("Year") +
+ylab("Total US Emissions") +
+ggtitle("Total Annual Emissions in US 1999 - 2008")
+
+print(myplot)
+
+#-----------------------------------------------------------
+
+## Read in the data and classification code
+fileurl <- "https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2Fpm25_data.zip"
+if(!file.exists("summarySCC_PM25.rds") || !file.exists("Source_Classification_Code.rds"))
+{
+download.file(fileurl, "DataFiles.zip")
+unzip("DataFiles.zip")
+}
+
+## Read the data into data frames
+
+pm25 <- readRDS("summarySCC_PM25.rds")
+scc <- readRDS("Source_Classification_Code.rds")
+
+pm25$year <- as.factor(pm25$year)
+pm25$type <- as.factor(pm25$type)
+pm25$fips <- as.factor(pm25$fips)
+pm25$Pollutant <- as.factor(pm25$Pollutant)
+
+## data prep for finding the motor vehicle emissions
+
+motor.scc <- scc[grep("[Vv]eh", scc$Short.Name), ]
+
+motor.scc.balt <- pm25 %>% 
+subset(fips == "24510" & pm25$SCC %in% motor.scc$SCC) %>%
+merge(y = motor.scc, 
+by.x = "SCC", 
+by.y = "SCC") %>%
+group_by(year) %>%
+summarize(emissions.type = sum(Emissions, na.rm = TRUE))
+
+
+myplot <- ggplot(motor.scc.balt, aes(year, emissions.type, group =1)) 
+
+myplot <- myplot + geom_line(linetype = "dashed", arrow = arrow(), color = "blue") +
+geom_point(color = "blue", 
+size = 4, 
+alpha = 1/3) + 
+xlab("Year") +
+ylab("Total Emissions [Tons]") +
+ggtitle("Total Annual Vehicle Emissions in Baltimore City")
+
+print(myplot)
+
+#---------------------------------------------------------------------------------
+
+## Read in the data and classification code
+fileurl <- "https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2Fpm25_data.zip"
+if(!file.exists("summarySCC_PM25.rds") || !file.exists("Source_Classification_Code.rds"))
+{
+download.file(fileurl, "DataFiles.zip")
+unzip("DataFiles.zip")
+}
+
+## Read the data into data frames
+
+pm25 <- readRDS("summarySCC_PM25.rds")
+scc <- readRDS("Source_Classification_Code.rds")
+
+motor.scc <- scc[grep("[Vv]eh", scc$Short.Name), ]
+
+motor.la <- pm25 %>% 
+subset(fips == "06037" & pm25$SCC %in% motor.scc$SCC) %>%
+merge(y = motor.scc, by.x = "SCC", by.y = "SCC") %>%
+group_by(year) %>%
+summarize(emissions.type = sum(Emissions, na.rm = TRUE))
+motor.balt <- pm25 %>% 
+subset(fips == "24510" & pm25$SCC %in% motor.scc$SCC) %>%
+merge(y = motor.scc, by.x = "SCC", by.y = "SCC") %>%
+group_by(year) %>%
+summarize(emissions.type = sum(Emissions, na.rm = TRUE))
+
+
+motor.balt <- cbind(motor.balt, "City" = rep("Baltimore", 4))
+motor.la <- cbind(motor.la, "City" = rep("LA", 4))
+
+emission.comparison <- rbind(motor.balt, motor.la)
+
+myplot <- ggplot(emission.comparison, aes(year, emissions.type, col = City, group = City)) +
+geom_line() +
+geom_point(size = 4, 
+alpha = 1/3) +
+xlab("Year") +
+ylab("Total Emissions [Tons]") +
+ggtitle("Comparison of Total Annual Vehicle Emissions in Baltimore and Los Angeles")
+
+myplot
